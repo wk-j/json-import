@@ -8,13 +8,18 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Microsoft.EntityFrameworkCore;
 
 namespace DynamicModel {
+
+    class Info {
+        public Type TargetType { set; get; }
+        public DynamicContext Context { set; get; }
+    }
+
     partial class Program {
 
-        static (DynamicContext, Type) CreateContext(string connectionString, string tableName, Type model) {
-            var type = ModelUtility.GenerateModelType(model, tableName);
+        static Info CreateContext<T>(string connectionString, string tableName) {
+            var type = ModelService.GenerateModelType(typeof(T), tableName);
             var modelOptions = new ModelOptions {
                 ModelType = type,
                 TypeName = tableName
@@ -32,7 +37,10 @@ namespace DynamicModel {
 
             var provider = collection.BuildServiceProvider();
             var context = provider.GetService<DynamicContext>();
-            return (context, type);
+            return new Info {
+                Context = context,
+                TargetType = type
+            };
         }
 
         static CommandLineOptions ParseArguments(IEnumerable<string> args) {
@@ -57,34 +65,22 @@ namespace DynamicModel {
             return options;
         }
 
-        static object[] GetDatas() {
-            return new[] {
-                new {
-                    A = 100,
-                    B = 100,
-                    C = new DateTime(2018,1,2)
-                },
-                new {
-                    A = 200,
-                    B = 200,
-                    C = new DateTime(2018,1,1)
-                }
-            };
-        }
-
         static void Main(string[] args) {
             var options = ParseArguments(args);
             var json = File.ReadAllText(options.JsonFile);
+            var data = JsonConvert.DeserializeObject<ExpandoObject[]>(json);
+            dynamic item = data[0];
+            var dict = item as Dictionary<string, object>;
 
-            var datas = GetDatas();
-            var type = datas[0].GetType();
-            var (context, targetType) = CreateContext(options.ConnectionString, options.TableName, type);
-
-            var realData = ModelUtility.Map(datas, targetType);
+            var info = CreateContext<Dictionary<string, Object>>(options.ConnectionString, options.TableName);
+            var context = info.Context;
+            var targetType = info.TargetType;
+            var realData = ModelService.Map(data, targetType);
 
             context.Database.EnsureDeleted();
             context.Database.EnsureCreated();
             context.AddRange(realData);
+            context.SaveChanges();
         }
     }
 }

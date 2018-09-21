@@ -6,7 +6,7 @@ using System.Linq;
 using AutoMapper;
 
 namespace DynamicModel {
-    class ModelUtility {
+    class ModelService {
         public static object[] Map(object[] source, Type targetType) {
             var type = source.ElementAt(0).GetType();
             Mapper.Initialize(cfg => cfg.CreateMap(type, targetType));
@@ -30,8 +30,6 @@ public class {name}: ModelBase {{
 }}
 return typeof({name});
             ";
-
-            Console.WriteLine(src);
 
             var reference = ScriptOptions.Default.WithReferences(Assembly.GetExecutingAssembly());
             var script = CSharpScript.Create(src, reference);
