@@ -11,18 +11,12 @@ using Newtonsoft.Json.Linq;
 
 namespace DynamicModel {
 
-    class Info {
-        public Type TargetType { set; get; }
-        public DynamicContext Context { set; get; }
-    }
+    class Program {
 
-    partial class Program {
+        static DynamicContext CreateContext(string connectionString, Type targetType) {
 
-        static Info CreateContext<T>(string connectionString, string tableName) {
-            var type = ModelService.GenerateModelType(typeof(T), tableName);
             var modelOptions = new ModelOptions {
-                ModelType = type,
-                TypeName = tableName
+                ModelType = targetType
             };
 
             var collection = new ServiceCollection();
@@ -37,10 +31,11 @@ namespace DynamicModel {
 
             var provider = collection.BuildServiceProvider();
             var context = provider.GetService<DynamicContext>();
-            return new Info {
-                Context = context,
-                TargetType = type
-            };
+            return context;
+        }
+
+        static Dictionary<string, string> ToProperties(IDictionary<string, Object> dict) {
+            return dict.ToDictionary(x => x.Key, x => x.Value.GetType().FullName);
         }
 
         static CommandLineOptions ParseArguments(IEnumerable<string> args) {
@@ -65,16 +60,29 @@ namespace DynamicModel {
             return options;
         }
 
+        static IEnumerable<IDictionary<string, Object>> GetData(string jsonFile) {
+            var json = File.ReadAllText(jsonFile);
+            var data = JsonConvert.DeserializeObject<ExpandoObject[]>(json);
+            return data.Select(x => {
+                dynamic item = x;
+                return item as IDictionary<string, object>;
+            });
+        }
+
+        static Type GenerateTargetType(IEnumerable<IDictionary<string, Object>> dict, string name) {
+            var first = dict.First();
+            var props = ToProperties(first);
+            var type = ModelService.GenerateModelType(props, name);
+            return type;
+        }
+
         static void Main(string[] args) {
             var options = ParseArguments(args);
-            var json = File.ReadAllText(options.JsonFile);
-            var data = JsonConvert.DeserializeObject<ExpandoObject[]>(json);
-            dynamic item = data[0];
-            var dict = item as Dictionary<string, object>;
+            var data = GetData(options.JsonFile).ToArray();
+            var targetType = GenerateTargetType(data, options.TableName);
+            Console.WriteLine(targetType);
+            var context = CreateContext(options.ConnectionString, targetType);
 
-            var info = CreateContext<Dictionary<string, Object>>(options.ConnectionString, options.TableName);
-            var context = info.Context;
-            var targetType = info.TargetType;
             var realData = ModelService.Map(data, targetType);
 
             context.Database.EnsureDeleted();

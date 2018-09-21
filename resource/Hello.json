@@ -1,12 +1,7 @@
 [
     {
-        "name": "Name",
-        "lastName": "Last name",
-        "age": 30
-    },
-    {
-        "name": "Name",
-        "lastName": "Last name",
-        "age": 30
+        "A": 100,
+        "B": 200,
+        "C": "Hello"
     }
 ]

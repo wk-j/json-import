@@ -1,5 +1,0 @@
-console.log("This is a vimgolf")
-console.log("This is also a vimgolf")
-console.log("Oh my vimgolf")
-console.log("Is this the last line?")
-console.log("I don't think so")
