@@ -9,12 +9,7 @@ namespace DynamicModel {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
-            var type = ModelUtility.GenerateModelType(modelOptions.ModelType, modelOptions.TypeName);
-            var entity = modelBuilder.Entity(type);
-            // var ins = Activator.CreateInstance(type);
-            // entity.HasData(new[] {
-            //     ins
-            // });
+            modelBuilder.Entity(modelOptions.ModelType);
         }
     }
 }

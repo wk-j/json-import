@@ -1,7 +1,5 @@
 ## Json Import
 
-Import json into database without predefined schema
-
 ## Installation
 
 ```

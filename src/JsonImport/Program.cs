@@ -8,21 +8,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace DynamicModel {
+    partial class Program {
 
-    class Program {
-
-        class CommandLineOptions {
-            public string ConnectionString { set; get; } = "";
-            public string DbType { set; get; } = "postgres";
-            public string JsonFile { set; get; } = "";
-            public string TableName { set; get; } = "Table";
-        }
-
-        static DynamicContext CreateContext(string connectionString, string tableName, Type model) {
+        static (DynamicContext, Type) CreateContext(string connectionString, string tableName, Type model) {
+            var type = ModelUtility.GenerateModelType(model, tableName);
             var modelOptions = new ModelOptions {
-                ModelType = model,
+                ModelType = type,
                 TypeName = tableName
             };
 
@@ -38,7 +32,7 @@ namespace DynamicModel {
 
             var provider = collection.BuildServiceProvider();
             var context = provider.GetService<DynamicContext>();
-            return context;
+            return (context, type);
         }
 
         static CommandLineOptions ParseArguments(IEnumerable<string> args) {
@@ -63,16 +57,34 @@ namespace DynamicModel {
             return options;
         }
 
+        static object[] GetDatas() {
+            return new[] {
+                new {
+                    A = 100,
+                    B = 100,
+                    C = new DateTime(2018,1,2)
+                },
+                new {
+                    A = 200,
+                    B = 200,
+                    C = new DateTime(2018,1,1)
+                }
+            };
+        }
+
         static void Main(string[] args) {
             var options = ParseArguments(args);
             var json = File.ReadAllText(options.JsonFile);
-            var obj = JArray.Parse(json);
-            var obj0 = obj[0];
 
-            // var type = obj[0].GetType();
-            // var context = CreateContext(options.ConnectionString, options.TableName, x.GetType());
-            // context.Database.EnsureDeleted();
-            // context.Database.EnsureCreated();
+            var datas = GetDatas();
+            var type = datas[0].GetType();
+            var (context, targetType) = CreateContext(options.ConnectionString, options.TableName, type);
+
+            var realData = ModelUtility.Map(datas, targetType);
+
+            context.Database.EnsureDeleted();
+            context.Database.EnsureCreated();
+            context.AddRange(realData);
         }
     }
 }
