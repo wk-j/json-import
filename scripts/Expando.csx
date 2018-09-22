@@ -14,3 +14,18 @@ var dict = result as IDictionary<string, object>;
 foreach (var (k, v) in dict) {
     Console.WriteLine($"{k} {v.GetType().FullName}");
 }
+
+
+class Data {
+    public int Auto { set; get; }
+    public int A { set; get; }
+    public int B { set; get; }
+    public DateTime Date { set; get; }
+}
+
+Mapper.Initialize(cfg => {
+    cfg.CreateMap(typeof(IDictionary<string, object>), typeof(Data));
+});
+
+var data = Mapper.Map<Data>(dict);
+Console.WriteLine(JsonConvert.SerializeObject(data));

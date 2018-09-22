@@ -3,6 +3,6 @@ using System.ComponentModel.DataAnnotations;
 namespace DynamicModel {
     public class ModelBase {
         [Key]
-        public int __Id__ { set; get; } = 0;
+        public int Auto { set; get; } = 0;
     }
 }

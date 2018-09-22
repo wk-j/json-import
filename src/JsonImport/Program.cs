@@ -80,9 +80,7 @@ namespace DynamicModel {
             var options = ParseArguments(args);
             var data = GetData(options.JsonFile).ToArray();
             var targetType = GenerateTargetType(data, options.TableName);
-            Console.WriteLine(targetType);
             var context = CreateContext(options.ConnectionString, targetType);
-
             var realData = ModelService.Map(data, targetType);
 
             context.Database.EnsureDeleted();
